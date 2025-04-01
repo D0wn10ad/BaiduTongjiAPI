@@ -3,24 +3,42 @@ import traceback
 from typing import Optional
 import datetime
 import requests
+import logging
 
 from .metrics import *
 from .data import *
 
-
-__all__ = ['refreshAccessToken', 'getSiteList', 'getTimeTrendRpt', 'getDistrictRpt', 'getCommonTrackRpt', 'getTrendTime', 'getTrendLatest', 'getSourceAll', 'getSourceEngine', 'getSourceSearchword', 'getSourceLink', 'getVisitToppage', 'getVisitLandingpage', 'getVisitTopdomain', 'getVisitDistrict', 'getVisitWorld']
-
+__all__ = ['setProxy', 'refreshAccessToken', 'getSiteList', 'getTimeTrendRpt', 'getDistrictRpt', 'getCommonTrackRpt', 'getTrendTime', 'getTrendLatest', 'getSourceAll', 'getSourceEngine', 'getSourceSearchword', 'getSourceLink', 'getVisitToppage', 'getVisitLandingpage', 'getVisitTopdomain', 'getVisitDistrict', 'getVisitWorld']
 
 GET_TOKEN_URL = 'https://openapi.baidu.com/oauth/2.0/token'
 GET_SITE_LIST_URL = 'https://openapi.baidu.com/rest/2.0/tongji/config/getSiteList'
 GET_REPORT_DATA_URL = 'https://openapi.baidu.com/rest/2.0/tongji/report/getData'
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s [%(threadName)s]")
+logger = logging.getLogger(__name__)
+
+proxies = None
+
+def setProxy(p):
+	global proxies
+	if p is not None and type(p) == dict:
+
+		proxies = p
+		logger.debug(f"Setting Proxy using {p=} and {proxies=}")
+		return True
+	return False
 
 def GET(retry=5, retry_delay=5, silent=True, **kwargs):
+#def GET(retry=5, retry_delay=5, silent=False, **kwargs):
 	retried = 0
 	while retried < retry:
 		try:
-			return requests.get(**kwargs)
+			if proxies is None:
+				logger.debug(f"{proxies=} is skipped for requests()")
+				return requests.get(**kwargs)
+			else:
+				logger.debug(f"{proxies=} is used for requests()")
+				return requests.get(proxies=proxies, **kwargs)
 		except Exception as e:
 			time.sleep(retry_delay)
 			retried += 1
