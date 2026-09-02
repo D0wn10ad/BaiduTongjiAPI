@@ -18,6 +18,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger(__name__)
 
 proxies = None
+JSON_DECODE_ERRORS = (ValueError,)
+if hasattr(requests.exceptions, 'JSONDecodeError'):
+	JSON_DECODE_ERRORS = JSON_DECODE_ERRORS + (requests.exceptions.JSONDecodeError,)
 
 def setProxy(p):
 	global proxies
@@ -54,7 +57,7 @@ def _get_baidu_json(**kwargs) -> dict:
 	response = GET(**kwargs)
 	try:
 		return response.json()
-	except ValueError:
+	except JSON_DECODE_ERRORS:
 		return {
 			'error_code': 'invalid_json_response',
 			'error_message': 'Baidu returned a non-JSON response',

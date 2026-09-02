@@ -4,6 +4,10 @@ from unittest.mock import Mock, patch
 import baidutongji.api as api
 
 
+class NonValueErrorJSONDecodeError(Exception):
+	pass
+
+
 class ApiResponseParsingTests(unittest.TestCase):
 	def setUp(self):
 		api.proxies = None
@@ -47,6 +51,36 @@ class ApiResponseParsingTests(unittest.TestCase):
 				"error_code": "invalid_json_response",
 				"error_message": "Baidu returned a non-JSON response",
 				"response_text": "<html>bad gateway</html>",
+			},
+		)
+
+	@patch("baidutongji.api.GET")
+	def test_get_baidu_json_normalizes_requests_jsondecodeerror(self, mock_get):
+		response = Mock()
+		json_decode_error = type("JSONDecodeError", (NonValueErrorJSONDecodeError,), {})
+		response.json.side_effect = json_decode_error("not json")
+		response.text = "temporary upstream html"
+		mock_get.return_value = response
+		original_json_decode_error = getattr(api.requests.exceptions, "JSONDecodeError", None)
+		original_json_decode_errors = api.JSON_DECODE_ERRORS
+		api.requests.exceptions.JSONDecodeError = json_decode_error
+		api.JSON_DECODE_ERRORS = (ValueError, json_decode_error)
+
+		try:
+			payload = api._get_baidu_json(url="https://example.com")
+		finally:
+			api.JSON_DECODE_ERRORS = original_json_decode_errors
+			if original_json_decode_error is None:
+				delattr(api.requests.exceptions, "JSONDecodeError")
+			else:
+				api.requests.exceptions.JSONDecodeError = original_json_decode_error
+
+		self.assertEqual(
+			payload,
+			{
+				"error_code": "invalid_json_response",
+				"error_message": "Baidu returned a non-JSON response",
+				"response_text": "temporary upstream html",
 			},
 		)
 
