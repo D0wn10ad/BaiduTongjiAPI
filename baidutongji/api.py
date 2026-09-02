@@ -21,6 +21,10 @@ proxies = None
 
 def setProxy(p):
 	global proxies
+	if p is None:
+		proxies = None
+		logger.debug("Proxy cleared")
+		return True
 	if p is not None and type(p) == dict:
 
 		proxies = p
@@ -38,7 +42,9 @@ def GET(retry=5, retry_delay=5, silent=True, **kwargs):
 				return requests.get(**kwargs)
 			else:
 				logger.debug(f"{proxies=} is used for requests()")
-				return requests.get(proxies=proxies, **kwargs)
+				request_kwargs = dict(kwargs)
+				request_kwargs.setdefault('proxies', proxies)
+				return requests.get(**request_kwargs)
 		except Exception as e:
 			time.sleep(retry_delay)
 			retried += 1
