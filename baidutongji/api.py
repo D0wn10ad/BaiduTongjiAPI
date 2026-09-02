@@ -18,6 +18,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger(__name__)
 
 proxies = None
+JSON_DECODE_ERRORS = (ValueError,)
+if hasattr(requests.exceptions, 'JSONDecodeError'):
+	JSON_DECODE_ERRORS = JSON_DECODE_ERRORS + (requests.exceptions.JSONDecodeError,)
 
 def setProxy(p):
 	global proxies
@@ -50,6 +53,18 @@ def GET(retry=5, retry_delay=5, silent=True, **kwargs):
 	raise Exception('DOWNLOAD FAILED')
 
 
+def _get_baidu_json(**kwargs) -> dict:
+	response = GET(**kwargs)
+	try:
+		return response.json()
+	except JSON_DECODE_ERRORS:
+		return {
+			'error_code': 'invalid_json_response',
+			'error_message': 'Baidu returned a non-JSON response',
+			'response_text': response.text,
+		}
+
+
 def cleanParams(params: dict) -> dict:
 	"""
 	清理参数
@@ -77,8 +92,7 @@ def refreshAccessToken(client_id, client_secret, refresh_token) -> dict:
 		'client_secret': client_secret,
 		'grant_type': 'refresh_token'
 	}
-	response = GET(url=GET_TOKEN_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_TOKEN_URL, params=cleanParams(params))
 
 
 def getSiteList(access_token) -> dict:
@@ -90,8 +104,7 @@ def getSiteList(access_token) -> dict:
 	params = {
 		'access_token': access_token
 	}
-	response = GET(url=GET_SITE_LIST_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_SITE_LIST_URL, params=cleanParams(params))
 
 
 def getTimeTrendRpt(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: TimeTrendRptMetrics) -> dict:
@@ -112,8 +125,7 @@ def getTimeTrendRpt(access_token: str, site_id: str, start_date: datetime.date, 
 		'metrics': metrics.getMetrics(),
 		'method': 'overview/getTimeTrendRpt'
 	}
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getDistrictRpt(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: DistrictRptMetrics) -> dict:
@@ -134,8 +146,7 @@ def getDistrictRpt(access_token: str, site_id: str, start_date: datetime.date, e
 		'metrics': metrics.getMetrics(),
 		'method': 'overview/getDistrictRpt'
 	}
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getCommonTrackRpt(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: CommonTrackRptMetrics) -> dict:
@@ -156,8 +167,7 @@ def getCommonTrackRpt(access_token: str, site_id: str, start_date: datetime.date
 		'metrics': metrics.getMetrics(),
 		'method': 'overview/getCommonTrackRpt'
 	}
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getTrendTime(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: TrendTimeMetrics, 
@@ -200,8 +210,7 @@ def getTrendTime(access_token: str, site_id: str, start_date: datetime.date, end
 		params['gran'] = gran.value
 	if area is not None:
 		params['area'] = area
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getTrendLatest(access_token: str, site_id: str, metrics: TrendLatestMetrics, source: Optional[Source]=None, clientDevice: Optional[ClientDevice]=None, visitor: Optional[VisitorType]=None, area: Optional[Region]=None) -> dict:
@@ -230,8 +239,7 @@ def getTrendLatest(access_token: str, site_id: str, metrics: TrendLatestMetrics,
 		params['visitor'] = visitor.value
 	if area is not None:
 		params['area'] = area
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getSourceAll(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics, 
@@ -265,8 +273,7 @@ def getSourceAll(access_token: str, site_id: str, start_date: datetime.date, end
 		params['visitor'] = visitor.value
 	if clientDevice is not None:
 		params['clientDevice'] = clientDevice.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getSourceEngine(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics,
@@ -303,8 +310,7 @@ def getSourceEngine(access_token: str, site_id: str, start_date: datetime.date, 
 		params['clientDevice'] = clientDevice.value
 	if area is not None:
 		params['area'] = area
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getSourceSearchword(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics,
@@ -341,8 +347,7 @@ def getSourceSearchword(access_token: str, site_id: str, start_date: datetime.da
 		params['clientDevice'] = clientDevice.value
 	if source is not None:
 		params['source'] = source.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getSourceLink(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics,
@@ -379,8 +384,7 @@ def getSourceLink(access_token: str, site_id: str, start_date: datetime.date, en
 		params['clientDevice'] = clientDevice.value
 	if domainType is not None:
 		params['domainType'] = domainType.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getVisitToppage(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: VisitToppageMetrics,
@@ -414,8 +418,7 @@ def getVisitToppage(access_token: str, site_id: str, start_date: datetime.date, 
 		params['source'] = source.value
 	if visitor is not None:
 		params['visitor'] = visitor.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getVisitLandingpage(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: VisitLandingpageMetrics,
@@ -442,8 +445,7 @@ def getVisitLandingpage(access_token: str, site_id: str, start_date: datetime.da
 	if start_date2 is not None and end_date2 is not None:
 		params['start_date2'] = start_date2.strftime('%Y%m%d')
 		params['end_date2'] = end_date2.strftime('%Y%m%d')
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getVisitTopdomain(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: VisitTopdomainMetrics,
@@ -477,8 +479,7 @@ def getVisitTopdomain(access_token: str, site_id: str, start_date: datetime.date
 		params['source'] = source.value
 	if visitor is not None:
 		params['visitor'] = visitor.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 
 def getVisitDistrict(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics,
@@ -512,8 +513,7 @@ def getVisitDistrict(access_token: str, site_id: str, start_date: datetime.date,
 		params['source'] = source.value
 	if visitor is not None:
 		params['visitor'] = visitor.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
 
 def getVisitWorld(access_token: str, site_id: str, start_date: datetime.date, end_date: datetime.date, metrics: SourceMetrics,
 	start_date2: Optional[datetime.date]=None, end_date2: Optional[datetime.date]=None, 
@@ -546,5 +546,4 @@ def getVisitWorld(access_token: str, site_id: str, start_date: datetime.date, en
 		params['source'] = source.value
 	if visitor is not None:
 		params['visitor'] = visitor.value
-	response = GET(url=GET_REPORT_DATA_URL, params=cleanParams(params))
-	return response.json()
+	return _get_baidu_json(url=GET_REPORT_DATA_URL, params=cleanParams(params))
