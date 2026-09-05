@@ -1,11 +1,13 @@
 name: Upload Python Package
 
-# DISABLED: triggers are commented out so this workflow is never executed.
-# To re-enable, uncomment the `on:` block below. Publishing to PyPI requires
-# a valid PYPI_API_TOKEN secret (this repo intentionally does not use one).
-# on:
-#   release:
-#     types: [published]
+# DISABLED: this workflow is never executed automatically.
+# It uses `workflow_dispatch` (manual-only) so it will NOT run on push,
+# release, or any other event. It can only be started by explicitly
+# clicking "Run workflow" in the Actions tab.
+# Publishing to PyPI requires a valid PYPI_API_TOKEN secret (this repo
+# intentionally does not use one).
+on:
+  workflow_dispatch:
 
 jobs:
   deploy:
