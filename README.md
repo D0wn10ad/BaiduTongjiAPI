@@ -2,6 +2,10 @@
 
 百度统计 API 的 Python 封装
 
+## 上游项目
+
+本项目 Fork 自 [JeffersonQin/BaiduTongjiAPI](https://github.com/JeffersonQin/BaiduTongjiAPI)（PyPI 包 [baidutongji](https://pypi.org/project/baidutongji/)），感谢上游作者 [JeffersonQin](https://github.com/JeffersonQin) 的原始工作。
+
 ## 支持范围
 
 |   账号类型   | 支持情况 |
@@ -68,3 +72,39 @@ baidutongji
   
   baidutongji.getTrendTime('{ACCESS_TOKEN}', '{SITE_ID}', datetime.date(2022, 1, 1), datetime.date(2022, 1, 10), TrendTimeMetrics().setAllTrue(), datetime.date(2022, 4, 1), datetime.date(2022, 4, 10), Source.ALL, ClientDevice.PC, VisitorType.RETURN, TimeGran.DAY, Region(RegionType.PROVINCE, '上海'))
   ```
+
+## 其他特性
+
+### 代理支持
+
+可通过 `setProxy()` 为所有请求设置代理：
+
+```python
+import baidutongji
+
+baidutongji.setProxy({'http': 'http://proxy.example.com:8080', 'https': 'https://proxy.example.com:8080'})
+```
+
+清除代理：
+
+```python
+import baidutongji
+
+baidutongji.setProxy(None)
+```
+
+> 注意：`setProxy()` 仅接受 `dict` 类型的参数，传入其他类型时返回 `False`，设置成功时返回 `True`。
+
+### 非 JSON 响应处理
+
+当百度返回非 JSON 内容（如网关 HTML 错误页）时，所有 API 不会抛出 JSON 解析异常，而是返回统一格式的错误字典：
+
+```python
+{
+    'error_code': 'invalid_json_response',
+    'error_message': 'Baidu returned a non-JSON response',
+    'response_text': '<html>...原始响应内容...</html>',
+}
+```
+
+其中 `response_text` 为百度返回的原始响应文本，便于排查问题。
