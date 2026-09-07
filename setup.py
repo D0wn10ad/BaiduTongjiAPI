@@ -13,7 +13,7 @@ def make_email(prefix, domain):
 
 setuptools.setup(
 	name = 'baidutongji',
-	version = '0.1.6',
+	version = '0.1.7',
 	author = 'JeffersonQin',
 	author_email = make_email('1247006353', 'qq.com'),
 	packages = ['baidutongji'],
